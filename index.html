@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Daily Tracker</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/__/firebase/11.6.1/firebase-app.js" defer></script> 
+    <script src="/__/firebase/11.6.1/firebase-auth.js" defer></script>
+    <script src="/__/firebase/11.6.1/firebase-firestore.js" defer></script>
+    <script src="/__/firebase/init.js" defer></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Baloo+2:wght@400;700&display=swap" rel="stylesheet">
     <style>
         body {
@@ -19,8 +23,8 @@
         .back-button {
             position: absolute;
             top: 20px;
-            left: 10px;
-            background-color: rgba(255, 255, 255, 0.8); /* Slightly more opaque */
+            left: 10px; /* Adjusted for better spacing on small screens */
+            background-color: rgba(255, 255, 255, 0.8);
             color: #333;
             padding: 8px 12px;
             border-radius: 10px;
@@ -29,10 +33,10 @@
             cursor: pointer;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             transition: background-color 0.2s;
-            z-index: 10; /* Ensure it's above patterned cards */
+            z-index: 10; 
         }
         .back-button:hover { background-color: rgba(255, 255, 255, 1); }
-        .section-container { width: 100%; max-width: 2xl; margin: auto; position: relative; }
+        .section-container { width: 100%; max-width: 2xl; margin: auto; position: relative; padding-left: 1rem; padding-right: 1rem; } /* Added padding for content */
         .loading-indicator, .error-message {
             text-align: center; padding: 2rem; font-size: 1.2rem; border-radius: 1rem; background-color: white; margin: 1rem;
         }
@@ -82,28 +86,26 @@
         .todo-item-card {
             background-color: #FFFFFF;
             border-radius: 1.5rem; padding: 1.25rem 1.5rem; margin-bottom: 1rem;
-            box-shadow: 0 8px 12px -3px rgba(107, 33, 168, 0.07), 0 3px 5px -2px rgba(107, 33, 168, 0.04); /* Subtle purple shadow */
+            box-shadow: 0 8px 12px -3px rgba(107, 33, 168, 0.07), 0 3px 5px -2px rgba(107, 33, 168, 0.04);
             transition: transform 0.2s ease-in-out, background-color 0.2s, opacity 0.2s;
             display: flex; align-items: center;
-            position: relative; /* For pseudo-elements if needed for pattern, or direct background */
-            /* Subtle Polka Dot Background Pattern */
-            background-image: radial-gradient(circle at 1.5px 1.5px, rgba(192, 132, 252, 0.15) 1.5px, transparent 0); /* Softer purple from C084FC, very transparent */
-            background-size: 12px 12px; /* Adjust size of pattern repetition */
+            position: relative; 
+            background-image: radial-gradient(circle at 1.5px 1.5px, rgba(192, 132, 252, 0.15) 1.5px, transparent 0);
+            background-size: 12px 12px; 
         }
         .todo-item-card:hover { transform: translateY(-5px); }
         .todo-item-card.done {
-            background-color: #EDE9FE; /* Purple 100 */
-            opacity: 0.75; /* Slightly more opaque to see text better with pattern */
-            /* The pattern from the base card will show through due to opacity */
+            background-color: #EDE9FE; 
+            opacity: 0.75; 
         }
         .todo-item-card.done .todo-item-text { text-decoration: line-through; color: #7E22CE; }
         .task-icon {
-            font-size: 1.4rem; /* Slightly larger task icon */
+            font-size: 1.4rem; 
             margin-right: 0.85rem;
-            width: 28px; /* Ensure space for slightly larger icons */
+            width: 28px; 
             text-align: center;
-            line-height: 1; /* Ensure icon vertical alignment */
-            color: #7E22CE; /* Purple-600 for icons */
+            line-height: 1; 
+            color: #7E22CE; 
         }
         .todo-item-text { font-size: 1.1rem; color: #581C87; flex-grow: 1; }
         .todo-checkbox-label .checkbox-custom { border-color: #D8B4FE; }
@@ -184,23 +186,15 @@
     </footer>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, onSnapshot, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        // Import Firebase services using the paths provided by Firebase Hosting
+        // The /__/firebase/init.js script (loaded in <head>) initializes the app.
+        import { initializeApp } from '/__/firebase/11.6.1/firebase-app.js';
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from '/__/firebase/11.6.1/firebase-auth.js';
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot, setLogLevel } from '/__/firebase/11.6.1/firebase-firestore.js';
+        
+        const appId = 'daily-tracker-app'; // Your custom app identifier for Firestore paths
 
-        // --- Firebase Configuration ---
-        const firebaseConfig = {
-            apiKey: "AIzaSyDG_xGcjbjOP5au93izZJ6msNU1jOyK1DM",
-            authDomain: "my-daughter-s-meal-tracker.firebaseapp.com",
-            projectId: "my-daughter-s-meal-tracker",
-            storageBucket: "my-daughter-s-meal-tracker.firebasestorage.app",
-            messagingSenderId: "800671628965",
-            appId: "1:800671628965:web:fb8005c1a66a4fed3f574c"
-        };
-        const firebaseConfigJSON = JSON.stringify(firebaseConfig); 
-        const appId = 'daily-tracker-app'; 
-
-        let app;
+        let app; // Will hold the default Firebase app instance
         let auth;
         let db;
         let userId;
@@ -216,7 +210,7 @@
         const mealScheduleContainer = document.getElementById('mealSchedule');
         const todoScheduleContainer = document.getElementById('todoSchedule');
 
-        const mealDataDefinition = [ /* ... (meal data definition remains the same) ... */ 
+        const mealDataDefinition = [ 
             { id: "event-wakeup", time: "6:00 AM", event: "Wake Up", type: "event", icon: "☀️" },
             { id: "meal-snack1", time: "6:30 AM - 7:00 AM", name: "Snack 1 (Morning Snack)", note: "Gap until school is 1 hour.", type: "meal", icon: "🥛" },
             { id: "event-school", time: "8:00 AM", event: "Go to School", type: "event", icon: "🎒" },
@@ -263,7 +257,7 @@
             { id: "todo-sore-6", text: "Almatsurat", type: "task", icon: "📖" },
             { type: "header", title: "Magrib", icon: "🌙" },
             { id: "todo-magrib-1", text: "Sholat", type: "task", icon: "🙏" },
-            { id: "todo-magrib-2", text: "Ombeh", type: "task", icon: "🤲" },
+            { id: "todo-magrib-2", text: "Ombeh", type: "task", icon: "🤲" }, // Assuming "Ombeh" is a specific term, keeping it.
             { id: "todo-magrib-3", text: "Siapin buat bsk sekolah", type: "task", icon: "📚" },
             { id: "todo-magrib-4", text: "Bobo", type: "task", icon: "💤" }
         ];
@@ -296,27 +290,14 @@
         }
         
         async function initializeFirebase() {
-            // Critical: Ensure firebaseConfig is not just an empty placeholder
-             if (!firebaseConfig || Object.keys(firebaseConfig).length === 0 || firebaseConfig.apiKey === undefined ) {
-                console.error("Firebase configuration is missing or empty. Please paste your firebaseConfig object into the HTML script tag where indicated.");
-                const errorDisplay = document.getElementById('initialChoiceScreen') || document.body;
-                errorDisplay.innerHTML = `<div class="error-message p-4 m-auto text-center">🚨 Firebase is not configured.<br>Please update the &lt;script&gt; tag in your HTML with your Firebase project details.</div>`;
-                return; // Stop execution if config is missing
-            }
-            // const firebaseConfigJSON is already defined above using the firebaseConfig object.
-
-            let parsedConfig;
-            try { parsedConfig = JSON.parse(firebaseConfigJSON); } 
-            catch (e) { 
-                console.error("Failed to parse Firebase configuration:", e);
-                (document.getElementById('initialChoiceScreen') || document.body).innerHTML = `<div class="error-message p-4 m-auto">🚨 Invalid Firebase configuration.</div>`;
-                return;
-            }
-
             try {
-                app = initializeApp(parsedConfig);
-                db = getFirestore(app);
-                auth = getAuth(app);
+                // /__/firebase/init.js automatically initializes Firebase.
+                // We can get a reference to the default app instance if needed.
+                app = initializeApp(); // Gets the default app instance
+
+                auth = getAuth(); // Uses the default app
+                db = getFirestore(); // Uses the default app
+                
                 setLogLevel('debug');
 
                 onAuthStateChanged(auth, async (user) => {
@@ -341,12 +322,13 @@
                     }
                 });
             } catch (error) {
-                console.error("Firebase initialization error:", error);
-                (document.getElementById('initialChoiceScreen') || document.body).innerHTML = `<div class="error-message p-4 m-auto">🚨 Firebase initialization failed.</div>`;
+                console.error("Firebase initialization or service retrieval error:", error);
+                const errorDisplay = document.getElementById('initialChoiceScreen') || document.body;
+                errorDisplay.innerHTML = `<div class="error-message p-4 m-auto text-center">🚨 Firebase services could not be started.<br>Ensure your site is deployed to Firebase Hosting and Firebase is properly configured in your project.</div>`;
             }
         }
         
-        function loadMealData() { /* ... (loadMealData function remains the same) ... */
+        function loadMealData() {
             if (!isAuthReady || !mealStatusDocRef) { renderMealCardsStatic(); return; }
             mealScheduleContainer.innerHTML = `<div class="loading-indicator">Loading meals... 🍓</div>`;
             if (mealDataListener) mealDataListener(); 
@@ -365,7 +347,7 @@
             });
         }
 
-        function renderMealCardsDynamic(statuses = {}) { /* ... (renderMealCardsDynamic function remains the same) ... */
+        function renderMealCardsDynamic(statuses = {}) {
             mealScheduleContainer.innerHTML = '';
             mealDataDefinition.forEach(item => {
                 const cardId = item.id;
@@ -401,7 +383,7 @@
             mealScheduleContainer.innerHTML = '<div class="error-message p-4 text-center">Meal tracking offline. Firebase connection issue.</div>';
         }
 
-        function loadTodoData() { /* ... (loadTodoData function remains the same) ... */
+        function loadTodoData() {
             if (!isAuthReady || !todoStatusDocRef) { renderTodoItemsStatic(); return; }
             todoScheduleContainer.innerHTML = `<div class="loading-indicator">Loading to-dos... 📝</div>`;
             if (todoDataListener) todoDataListener(); 
@@ -453,7 +435,7 @@
             todoScheduleContainer.innerHTML = '<div class="error-message p-4 text-center">To-Do list offline. Firebase connection issue.</div>';
         }
 
-        async function handleItemCheckChange(event, itemType) { /* ... (handleItemCheckChange function remains the same) ... */
+        async function handleItemCheckChange(event, itemType) {
             if (!isAuthReady) { event.target.checked = !event.target.checked; return; }
             const itemId = event.target.dataset.itemid;
             const isChecked = event.target.checked;
@@ -463,20 +445,16 @@
             if (!docRef) { event.target.checked = !event.target.checked; return; }
             
             try {
-                // Optimistic update for UI responsiveness
                 if (cardElement) {
                     if (itemType === 'meal') cardElement.classList.toggle('eaten', isChecked);
                     else if (itemType === 'todo') cardElement.classList.toggle('done', isChecked);
                 }
-
                 const docSnap = await getDoc(docRef);
                 const currentStatuses = docSnap.exists() && docSnap.data().statuses ? { ...docSnap.data().statuses } : {};
                 currentStatuses[itemId] = isChecked;
                 await setDoc(docRef, { statuses: currentStatuses }, { merge: true });
-                // console.log(`${itemType} item ${itemId} status updated in Firestore.`); // Already logged by onSnapshot usually
             } catch (error) {
                 console.error(`Error updating ${itemType} item status:`, error);
-                // Revert UI on error
                 event.target.checked = !isChecked; 
                 if (cardElement) { 
                      if (itemType === 'meal') cardElement.classList.toggle('eaten', !isChecked);
@@ -484,7 +462,23 @@
                 }
             }
         }
-        initializeFirebase();
+        
+        // Wait for Firebase to be initialized by /__/firebase/init.js
+        // A common way is to check if firebase.app is available, or use a promise if init.js provides one.
+        // For simplicity here, we'll assume init.js runs and sets up the default app before this module fully executes,
+        // especially with 'defer' on the init.js script tag.
+        // A more robust check might involve:
+        // document.addEventListener('firebase-initialized', initializeFirebase); // If init.js dispatches such an event
+        // Or polling for `firebase.app()` if using compat libraries.
+        // With modular, `initializeApp()` without args should work if the default app is set.
+        
+        // Attempt to initialize Firebase services after the page structure is ready
+        // and assuming /__/firebase/init.js has had a chance to run.
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeFirebase);
+        } else {
+            initializeFirebase(); // Or call it directly if DOM is already loaded
+        }
         showView('initialChoice'); 
     </script>
 </body>
