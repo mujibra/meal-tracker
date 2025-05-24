@@ -83,7 +83,7 @@ const MealTracker = ({ user, onNavigate, customAppId }) => {
                 key={item.id} 
                 className={`p-6 mb-6 rounded-3xl border border-gray-200 transition-all
                 ${isChecked 
-                    ? 'bg-pink-700 opacity-90 shadow-custom-meal' // Eaten card uses custom shadow if working
+                    ? 'bg-pink-300 opacity-90 shadow-custom-meal' // Eaten card uses custom shadow if working
                     : 'bg-pink-50 shadow-lg hover:shadow-xl hover:-translate-y-1' // Default card uses standard shadow-lg + subtle border
                 }`}
               > {/* Using custom shadow, opacity-90 for eaten, border-transparent might help rendering engine? */}
