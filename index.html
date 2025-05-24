@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Tracker</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍓</text></svg>">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/__/firebase/11.6.1/firebase-app.js" defer></script> 
+    <script src="/__/firebase/11.6.1/firebase-auth.js" defer></script>
+    <script src="/__/firebase/11.6.1/firebase-firestore.js" defer></script>
+    <script src="/__/firebase/init.js" defer></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Baloo+2:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Baloo 2', cursive;
+            background-color: #F3E8FF; /* Light Lavender for general background */
+            transition: background-color 0.5s ease;
+        }
+        .hidden { display: none; }
+
+        /* General Styles */
+        .main-header-icon { font-size: 3rem; margin-bottom: 0.5rem; }
+        .back-button {
+            position: absolute;
+            top: 20px;
+            left: 10px; /* Adjusted for better spacing on small screens */
+            background-color: rgba(255, 255, 255, 0.8);
+            color: #333;
+            padding: 8px 12px;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: background-color 0.2s;
+            z-index: 10; 
+        }
+        .back-button:hover { background-color: rgba(255, 255, 255, 1); }
+        .section-container { width: 100%; max-width: 2xl; margin: auto; position: relative; padding-left: 1rem; padding-right: 1rem; } /* Added padding for content */
+        .loading-indicator, .error-message {
+            text-align: center; padding: 2rem; font-size: 1.2rem; border-radius: 1rem; background-color: white; margin: 1rem;
+        }
+        .error-message { color: #EF4444; }
+        #userIdDisplay {
+            position: fixed; bottom: 10px; left: 10px; background-color: rgba(255, 255, 255, 0.9);
+            padding: 5px 10px; border-radius: 8px; font-size: 0.75rem; color: #333;
+            font-family: 'Inter', sans-serif; z-index: 1000; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* Initial Choice Screen Styles */
+        #initialChoiceScreen { text-align: center; padding-top: 5vh; }
+        .choice-card {
+            background-color: white; padding: 2rem 1.5rem; border-radius: 1.5rem;
+            margin: 1rem; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.07), 0 4px 6px -2px rgba(0,0,0,0.04);
+        }
+        .choice-card:hover { transform: translateY(-5px); box-shadow: 0 15px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.07); }
+        .choice-icon { font-size: 3.5rem; margin-bottom: 0.5rem; }
+        .choice-title { font-size: 1.8rem; font-weight: 700; }
+        .choice-description { font-size: 0.9rem; color: #6B7280; margin-top: 0.25rem; font-family: 'Inter', sans-serif; }
+
+        /* Meal Tracker Specific Styles */
+        .meal-tracker-active body { background-color: #FFF0F5; }
+        .meal-card {
+            background-color: #FFFFFF; border-radius: 1.5rem; padding: 1.5rem; margin-bottom: 1.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.03);
+            transition: transform 0.2s ease-in-out, background-color 0.2s ease-in-out, opacity 0.2s ease-in-out;
+        }
+        .meal-card:hover { transform: translateY(-5px); }
+        .meal-card.eaten { background-color: #E6FFFA; opacity: 0.7; }
+        .meal-time { font-size: 0.9rem; color: #FF69B4; }
+        .meal-name { font-size: 1.5rem; font-weight: 700; color: #333; margin-top: 0.25rem; margin-bottom: 0.5rem; }
+        .meal-note { font-size: 0.8rem; color: #6B7280; font-family: 'Inter', sans-serif; }
+        .meal-checkbox-label .checkbox-custom { border-color: #FFB6C1; }
+        .meal-checkbox-label input[type="checkbox"]:checked + .checkbox-custom { background-color: #34D399; border-color: #34D399; }
+
+        /* To-Do List Specific Styles - Super Cute */
+        .todo-list-active body { background-color: #F3E8FF; }
+        .todo-section-title {
+            font-size: 1.6rem; font-weight: 700; color: #581C87;
+            margin-top: 2rem; margin-bottom: 1rem; padding-bottom: 0.5rem;
+            border-bottom: 2px solid #A78BFA; display: flex; align-items: center;
+        }
+        .todo-section-title .section-icon { font-size: 1.8rem; margin-right: 0.5rem; }
+
+        .todo-item-card {
+            background-color: #FFFFFF;
+            border-radius: 1.5rem; padding: 1.25rem 1.5rem; margin-bottom: 1rem;
+            box-shadow: 0 8px 12px -3px rgba(107, 33, 168, 0.07), 0 3px 5px -2px rgba(107, 33, 168, 0.04);
+            transition: transform 0.2s ease-in-out, background-color 0.2s, opacity 0.2s;
+            display: flex; align-items: center;
+            position: relative; 
+            background-image: radial-gradient(circle at 1.5px 1.5px, rgba(192, 132, 252, 0.15) 1.5px, transparent 0);
+            background-size: 12px 12px; 
+        }
+        .todo-item-card:hover { transform: translateY(-5px); }
+        .todo-item-card.done {
+            background-color: #EDE9FE; 
+            opacity: 0.75; 
+        }
+        .todo-item-card.done .todo-item-text { text-decoration: line-through; color: #7E22CE; }
+        .task-icon {
+            font-size: 1.4rem; 
+            margin-right: 0.85rem;
+            width: 28px; 
+            text-align: center;
+            line-height: 1; 
+            color: #7E22CE; 
+        }
+        .todo-item-text { font-size: 1.1rem; color: #581C87; flex-grow: 1; }
+        .todo-checkbox-label .checkbox-custom { border-color: #D8B4FE; }
+        .todo-checkbox-label input[type="checkbox"]:checked + .checkbox-custom { background-color: #A78BFA; border-color: #A78BFA; }
+        
+        .todo-header-event {
+            background-color: #E9D5FF; color: #581C87;
+            padding: 1rem 1.5rem; border-radius: 1.5rem; margin-bottom: 1rem; text-align: center;
+            font-weight: 700; font-size: 1.1rem;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+            display: flex; align-items: center; justify-content: center;
+        }
+        .todo-header-event .event-icon { font-size: 1.5rem; margin-right: 0.5rem; }
+
+        /* Shared Checkbox Styles */
+        .checkbox-label { display: flex; align-items: center; cursor: pointer; font-size: 1.1rem; margin-left: auto; }
+        .checkbox-custom {
+            width: 1.75rem; height: 1.75rem; border-width: 2px; border-radius: 0.5rem;
+            margin-right: 0.75rem; display: flex; align-items: center; justify-content: center;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+        .checkbox-custom svg { display: none; width: 1.25rem; height: 1.25rem; stroke: white; stroke-width: 3; }
+        input[type="checkbox"]:checked + .checkbox-label .checkbox-custom svg { display: block; }
+        input[type="checkbox"] { display: none; }
+
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center p-4 sm:p-6">
+
+    <div id="userIdDisplay" style="display: none;">User ID: <span id="currentUserId"></span></div>
+
+    <div id="initialChoiceScreen" class="section-container">
+        <div class="text-center mb-10">
+            <div class="main-header-icon">🧸</div>
+            <h1 class="text-4xl font-bold text-gray-700">My Daily Helper</h1>
+            <p class="text-gray-500 mt-2">Choose what you want to track today!</p>
+        </div>
+        <div class="grid md:grid-cols-2 gap-6">
+            <div id="choiceMealTracker" class="choice-card">
+                <div class="choice-icon">🍓</div>
+                <h3 class="choice-title text-pink-500">Meal Tracker</h3>
+                <p class="choice-description">Track your daily meals and snacks.</p>
+            </div>
+            <div id="choiceTodoList" class="choice-card">
+                <div class="choice-icon">📝</div>
+                <h3 class="choice-title text-purple-600">To-Do List</h3>
+                <p class="choice-description">Check off your daily tasks and routines.</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="mealTrackerSection" class="section-container hidden">
+        <button id="backToMenuFromMeals" class="back-button">❮ Menu</button>
+        <header class="text-center mb-8 mt-16">
+            <div class="main-header-icon text-pink-400">🍓</div>
+            <h1 class="text-4xl font-bold text-pink-500">My Daily Meals</h1>
+            <p class="text-gray-600 mt-2">Let's track our yummy food today!</p>
+        </header>
+        <main id="mealSchedule">
+            <div class="loading-indicator">Loading meals... 🧸</div>
+        </main>
+    </div>
+
+    <div id="todoListSection" class="section-container hidden">
+        <button id="backToMenuFromTodos" class="back-button">❮ Menu</button>
+        <header class="text-center mb-8 mt-16">
+            <div class="main-header-icon text-purple-500">📝</div>
+            <h1 class="text-4xl font-bold text-purple-600">My To-Do List</h1>
+            <p class="text-gray-500 mt-2">Let's get things done!</p>
+        </header>
+        <main id="todoSchedule">
+            <div class="loading-indicator">Loading to-dos... 🧸</div>
+        </main>
+    </div>
+    
+    <footer class="text-center mt-10 mb-6 text-sm text-gray-500">
+        &copy; 2025 Fun Times Tracker
+    </footer>
+
+    <script type="module">
+        // Import Firebase services using the paths provided by Firebase Hosting
+        // The /__/firebase/init.js script (loaded in <head>) initializes the app.
+        import { initializeApp } from '/__/firebase/11.6.1/firebase-app.js';
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from '/__/firebase/11.6.1/firebase-auth.js';
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot, setLogLevel } from '/__/firebase/11.6.1/firebase-firestore.js';
+        
+        const appId = 'daily-tracker-app'; // Your custom app identifier for Firestore paths
+
+        let app; // Will hold the default Firebase app instance
+        let auth;
+        let db;
+        let userId;
+        let mealStatusDocRef;
+        let todoStatusDocRef;
+        let isAuthReady = false;
+        let mealDataListener = null; 
+        let todoDataListener = null; 
+
+        const initialChoiceScreen = document.getElementById('initialChoiceScreen');
+        const mealTrackerSection = document.getElementById('mealTrackerSection');
+        const todoListSection = document.getElementById('todoListSection');
+        const mealScheduleContainer = document.getElementById('mealSchedule');
+        const todoScheduleContainer = document.getElementById('todoSchedule');
+
+        const mealDataDefinition = [ 
+            { id: "event-wakeup", time: "6:00 AM", event: "Wake Up", type: "event", icon: "☀️" },
+            { id: "meal-snack1", time: "6:30 AM - 7:00 AM", name: "Snack 1 (Morning Snack)", note: "Gap until school is 1 hour.", type: "meal", icon: "🥛" },
+            { id: "event-school", time: "8:00 AM", event: "Go to School", type: "event", icon: "🎒" },
+            { id: "meal-snack2", time: "9:00 AM - 9:30 AM", name: "Snack 2 (School Snack)", note: "Gap until Main Course 1 is 1 hour 30 minutes.", type: "meal", icon: "🍎" },
+            { id: "meal-main1", time: "11:00 AM - 11:30 AM", name: "Main Course 1 (Brunch/Early Lunch)", note: "", type: "meal", icon: "🥪" },
+            { id: "event-sparetime", time: "11:30 AM - 12:00 PM", event: "Spare time before nap", type: "event", icon: "🧸" },
+            { id: "event-nap", time: "12:00 PM - 1:30 PM", event: "Nap Time", type: "event", icon: "😴" },
+            { id: "meal-main2", time: "2:00 PM - 2:30 PM", name: "Main Course 2 (Lunch after nap)", note: "Nap ends at 1:30 PM. Meal 30 mins after. Gap to Snack 3 is 2 hours.", type: "meal", icon: "🍝" },
+            { id: "meal-snack3", time: "4:30 PM - 5:00 PM", name: "Snack 3 (Afternoon Snack)", note: "Gap to Main Course 3 is 1 hour 30 minutes.", type: "meal", icon: "🍪" },
+            { id: "meal-main3", time: "6:30 PM - 7:00 PM", name: "Main Course 3 (Dinner/Last Meal)", note: "", type: "meal", icon: "🍚" },
+            { id: "event-bedtime", time: "8:00 PM", event: "Bedtime", type: "event", icon: "🌙" }
+        ];
+
+        const todoDataDefinition = [
+            { type: "header", title: "Bangun tidur", icon: "🌅" },
+            { id: "todo-bangun-1", text: "Minum", type: "task", icon: "💧" },
+            { id: "todo-bangun-2", text: "Beresin tempat tidur", type: "task", icon: "🛏️" },
+            { id: "todo-bangun-3", text: "Cuci muka/wudhu", type: "task", icon: "🧼" },
+            { id: "todo-bangun-4", text: "Solat subuh", type: "task", icon: "🙏" },
+            { id: "todo-bangun-5", text: "Almatsurat", type: "task", icon: "📖" },
+            { type: "header", title: "Siap siap sekolah", icon: "🎒" },
+            { id: "todo-sekolah-1", text: "Mandi", type: "task", icon: "🚿" },
+            { id: "todo-sekolah-2", text: "Sarapan", type: "task", icon: "🥞" },
+            { id: "todo-sekolah-3", text: "Siapin bekel + minum", type: "task", icon: "🍱" },
+            { id: "todo-sekolah-4", text: "Minum", type: "task", icon: "🥤" },
+            { type: "event", title: "Sekolah", icon: "🏫" },
+            { type: "header", title: "Pulang sekolah", icon: "🏡" },
+            { id: "todo-pulang-1", text: "Simpen tas ditempatnya", type: "task", icon: "🎒" },
+            { id: "todo-pulang-2", text: "Cuci kaki tangan muka", type: "task", icon: "🤲" },
+            { id: "todo-pulang-3", text: "Ganti baju", type: "task", icon: "👕" },
+            { id: "todo-pulang-4", text: "Simpen wadah bekel ke wastafel", type: "task", icon: "🍽️" },
+            { id: "todo-pulang-5", text: "Minum", type: "task", icon: "💧" },
+            { type: "header", title: "Siang", icon: "☀️" },
+            { id: "todo-siang-1", text: "Minum", type: "task", icon: "💧" },
+            { id: "todo-siang-2", text: "Sholat", type: "task", icon: "🙏" },
+            { id: "todo-siang-3", text: "Makan siang", type: "task", icon: "🍛" },
+            { id: "todo-siang-4", text: "Tidur siang", type: "task", icon: "😴" },
+            { type: "header", title: "Sore", icon: "🧸" },
+            { id: "todo-sore-1", text: "Sholat", type: "task", icon: "🙏" },
+            { id: "todo-sore-2", text: "Main", type: "task", icon: "🪁" },
+            { id: "todo-sore-3", text: "Mandi", type: "task", icon: "🛀" },
+            { id: "todo-sore-4", text: "Makan malem", type: "task", icon: "🍲" },
+            { id: "todo-sore-5", text: "Beresin rumah sebelum papa plg", type: "task", icon: "🧹" },
+            { id: "todo-sore-6", text: "Almatsurat", type: "task", icon: "📖" },
+            { type: "header", title: "Magrib", icon: "🌙" },
+            { id: "todo-magrib-1", text: "Sholat", type: "task", icon: "🙏" },
+            { id: "todo-magrib-2", text: "Ombeh", type: "task", icon: "🤲" }, // Assuming "Ombeh" is a specific term, keeping it.
+            { id: "todo-magrib-3", text: "Siapin buat bsk sekolah", type: "task", icon: "📚" },
+            { id: "todo-magrib-4", text: "Bobo", type: "task", icon: "💤" }
+        ];
+
+        document.getElementById('choiceMealTracker').addEventListener('click', () => showView('mealTracker'));
+        document.getElementById('choiceTodoList').addEventListener('click', () => showView('todoList'));
+        document.getElementById('backToMenuFromMeals').addEventListener('click', () => showView('initialChoice'));
+        document.getElementById('backToMenuFromTodos').addEventListener('click', () => showView('initialChoice'));
+
+        function showView(viewName) {
+            initialChoiceScreen.classList.add('hidden');
+            mealTrackerSection.classList.add('hidden');
+            todoListSection.classList.add('hidden');
+            document.body.classList.remove('meal-tracker-active', 'todo-list-active');
+
+            if (mealDataListener) { mealDataListener(); mealDataListener = null; }
+            if (todoDataListener) { todoDataListener(); todoDataListener = null; }
+
+            if (viewName === 'mealTracker') {
+                mealTrackerSection.classList.remove('hidden');
+                document.body.classList.add('meal-tracker-active');
+                if (isAuthReady) loadMealData(); else renderMealCardsStatic();
+            } else if (viewName === 'todoList') {
+                todoListSection.classList.remove('hidden');
+                document.body.classList.add('todo-list-active');
+                if (isAuthReady) loadTodoData(); else renderTodoItemsStatic();
+            } else {
+                initialChoiceScreen.classList.remove('hidden');
+            }
+        }
+        
+        async function initializeFirebase() {
+            try {
+                // /__/firebase/init.js automatically initializes Firebase.
+                // We can get a reference to the default app instance if needed.
+                app = initializeApp(); // Gets the default app instance
+
+                auth = getAuth(); // Uses the default app
+                db = getFirestore(); // Uses the default app
+                
+                setLogLevel('debug');
+
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        userId = user.uid; isAuthReady = true;
+                        console.log("User authenticated. UID:", userId);
+                        document.getElementById('currentUserId').textContent = userId;
+                        document.getElementById('userIdDisplay').style.display = 'block';
+                        
+                        mealStatusDocRef = doc(db, `artifacts/${appId}/users/${userId}/mealTrackerData`, "dailyMealStatus");
+                        todoStatusDocRef = doc(db, `artifacts/${appId}/users/${userId}/todoListData`, "dailyTodoStatus");
+
+                        if (!mealTrackerSection.classList.contains('hidden')) loadMealData();
+                        if (!todoListSection.classList.contains('hidden')) loadTodoData();
+                    } else {
+                        isAuthReady = false; console.log("User is signed out. Attempting sign-in...");
+                        const authToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+                        if (authToken) {
+                            try { await signInWithCustomToken(auth, authToken); } 
+                            catch (err) { console.error("Custom token sign-in error:", err); await signInAnonymously(auth); }
+                        } else { await signInAnonymously(auth).catch(err => console.error("Anonymous sign-in error:", err)); }
+                    }
+                });
+            } catch (error) {
+                console.error("Firebase initialization or service retrieval error:", error);
+                const errorDisplay = document.getElementById('initialChoiceScreen') || document.body;
+                errorDisplay.innerHTML = `<div class="error-message p-4 m-auto text-center">🚨 Firebase services could not be started.<br>Ensure your site is deployed to Firebase Hosting and Firebase is properly configured in your project.</div>`;
+            }
+        }
+        
+        function loadMealData() {
+            if (!isAuthReady || !mealStatusDocRef) { renderMealCardsStatic(); return; }
+            mealScheduleContainer.innerHTML = `<div class="loading-indicator">Loading meals... 🍓</div>`;
+            if (mealDataListener) mealDataListener(); 
+            mealDataListener = onSnapshot(mealStatusDocRef, async (docSnap) => {
+                const statuses = docSnap.exists() ? (docSnap.data().statuses || {}) : {};
+                renderMealCardsDynamic(statuses);
+                if (!docSnap.exists()) {
+                    console.log("No meal status data. Creating initial meal doc.");
+                    const initialStatuses = {};
+                    mealDataDefinition.filter(item => item.type === 'meal').forEach(meal => { initialStatuses[meal.id] = false; });
+                    try { await setDoc(mealStatusDocRef, { statuses: initialStatuses }); } catch(e){console.error("Failed to set initial meal doc", e)}
+                }
+            }, (error) => {
+                console.error("Error listening to meal status:", error);
+                mealScheduleContainer.innerHTML = `<div class="error-message">🚨 Error loading meals.</div>`;
+            });
+        }
+
+        function renderMealCardsDynamic(statuses = {}) {
+            mealScheduleContainer.innerHTML = '';
+            mealDataDefinition.forEach(item => {
+                const cardId = item.id;
+                let cardHtml = '';
+                if (item.type === 'meal') {
+                    const isChecked = statuses[cardId] === true;
+                    cardHtml = `
+                        <div class="meal-card ${isChecked ? 'eaten' : ''}" id="${cardId}">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="meal-time">${item.time} ${item.icon}</p>
+                                    <h3 class="meal-name">${item.name}</h3>
+                                </div>
+                                <input type="checkbox" id="checkbox-${cardId}" data-itemid="${cardId}" ${isChecked ? 'checked' : ''}>
+                                <label for="checkbox-${cardId}" class="checkbox-label meal-checkbox-label">
+                                    <span class="checkbox-custom"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></span>
+                                    <span class="ml-2 text-sm font-medium text-gray-700 sr-only">Eaten</span>
+                                </label>
+                            </div>
+                            ${item.note ? `<p class="meal-note mt-3">${item.note}</p>` : ''}
+                        </div>`;
+                } else { 
+                    cardHtml = `<div class="meal-card bg-pink-50 border-l-4 border-pink-400"><div class="flex items-center"><span class="text-2xl mr-3">${item.icon}</span><div><p class="meal-time text-pink-500 font-semibold">${item.time}</p><h3 class="text-lg font-semibold text-pink-700">${item.event}</h3></div></div></div>`;
+                }
+                mealScheduleContainer.innerHTML += cardHtml;
+            });
+            mealDataDefinition.filter(item => item.type === 'meal').forEach(meal => {
+                const checkbox = document.getElementById(`checkbox-${meal.id}`);
+                if (checkbox) checkbox.addEventListener('change', (e) => handleItemCheckChange(e, 'meal'));
+            });
+        }
+        function renderMealCardsStatic() { 
+            mealScheduleContainer.innerHTML = '<div class="error-message p-4 text-center">Meal tracking offline. Firebase connection issue.</div>';
+        }
+
+        function loadTodoData() {
+            if (!isAuthReady || !todoStatusDocRef) { renderTodoItemsStatic(); return; }
+            todoScheduleContainer.innerHTML = `<div class="loading-indicator">Loading to-dos... 📝</div>`;
+            if (todoDataListener) todoDataListener(); 
+            todoDataListener = onSnapshot(todoStatusDocRef, async (docSnap) => {
+                const statuses = docSnap.exists() ? (docSnap.data().statuses || {}) : {};
+                renderTodoItemsDynamic(statuses);
+                if (!docSnap.exists()) {
+                    console.log("No todo status data. Creating initial todo doc.");
+                    const initialStatuses = {};
+                    todoDataDefinition.filter(item => item.type === 'task').forEach(task => { initialStatuses[task.id] = false; });
+                    try { await setDoc(todoStatusDocRef, { statuses: initialStatuses }); } catch(e){console.error("Failed to set initial todo doc", e)}
+                }
+            }, (error) => {
+                console.error("Error listening to todo status:", error);
+                todoScheduleContainer.innerHTML = `<div class="error-message">🚨 Error loading to-dos.</div>`;
+            });
+        }
+
+        function renderTodoItemsDynamic(statuses = {}) {
+            todoScheduleContainer.innerHTML = '';
+            todoDataDefinition.forEach(item => {
+                let itemHtml = '';
+                if (item.type === 'header') {
+                    itemHtml = `<h2 class="todo-section-title"><span class="section-icon">${item.icon || '📌'}</span>${item.title}</h2>`;
+                } else if (item.type === 'event') {
+                    itemHtml = `<div class="todo-header-event"><span class="event-icon">${item.icon || '🗓️'}</span>${item.title}</div>`;
+                } else if (item.type === 'task') {
+                    const itemId = item.id;
+                    const isChecked = statuses[itemId] === true;
+                    itemHtml = `
+                        <div class="todo-item-card ${isChecked ? 'done' : ''}" id="${itemId}">
+                            <span class="task-icon">${item.icon || '▫️'}</span>
+                            <p class="todo-item-text">${item.text}</p>
+                            <input type="checkbox" id="checkbox-${itemId}" data-itemid="${itemId}" ${isChecked ? 'checked' : ''}>
+                            <label for="checkbox-${itemId}" class="checkbox-label todo-checkbox-label">
+                                <span class="checkbox-custom"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></span>
+                                <span class="ml-2 text-sm font-medium text-gray-700 sr-only">Done</span>
+                            </label>
+                        </div>`;
+                }
+                todoScheduleContainer.innerHTML += itemHtml;
+            });
+            todoDataDefinition.filter(item => item.type === 'task').forEach(task => {
+                const checkbox = document.getElementById(`checkbox-${task.id}`);
+                if (checkbox) checkbox.addEventListener('change', (e) => handleItemCheckChange(e, 'todo'));
+            });
+        }
+        function renderTodoItemsStatic() { 
+            todoScheduleContainer.innerHTML = '<div class="error-message p-4 text-center">To-Do list offline. Firebase connection issue.</div>';
+        }
+
+        async function handleItemCheckChange(event, itemType) {
+            if (!isAuthReady) { event.target.checked = !event.target.checked; return; }
+            const itemId = event.target.dataset.itemid;
+            const isChecked = event.target.checked;
+            const docRef = itemType === 'meal' ? mealStatusDocRef : todoStatusDocRef;
+            const cardElement = document.getElementById(itemId); 
+
+            if (!docRef) { event.target.checked = !event.target.checked; return; }
+            
+            try {
+                if (cardElement) {
+                    if (itemType === 'meal') cardElement.classList.toggle('eaten', isChecked);
+                    else if (itemType === 'todo') cardElement.classList.toggle('done', isChecked);
+                }
+                const docSnap = await getDoc(docRef);
+                const currentStatuses = docSnap.exists() && docSnap.data().statuses ? { ...docSnap.data().statuses } : {};
+                currentStatuses[itemId] = isChecked;
+                await setDoc(docRef, { statuses: currentStatuses }, { merge: true });
+            } catch (error) {
+                console.error(`Error updating ${itemType} item status:`, error);
+                event.target.checked = !isChecked; 
+                if (cardElement) { 
+                     if (itemType === 'meal') cardElement.classList.toggle('eaten', !isChecked);
+                     else if (itemType === 'todo') cardElement.classList.toggle('done', !isChecked);
+                }
+            }
+        }
+        
+        // Wait for Firebase to be initialized by /__/firebase/init.js
+        // A common way is to check if firebase.app is available, or use a promise if init.js provides one.
+        // For simplicity here, we'll assume init.js runs and sets up the default app before this module fully executes,
+        // especially with 'defer' on the init.js script tag.
+        // A more robust check might involve:
+        // document.addEventListener('firebase-initialized', initializeFirebase); // If init.js dispatches such an event
+        // Or polling for `firebase.app()` if using compat libraries.
+        // With modular, `initializeApp()` without args should work if the default app is set.
+        
+        // Attempt to initialize Firebase services after the page structure is ready
+        // and assuming /__/firebase/init.js has had a chance to run.
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeFirebase);
+        } else {
+            initializeFirebase(); // Or call it directly if DOM is already loaded
+        }
+        showView('initialChoice'); 
+    </script>
+</body>
+</html>
