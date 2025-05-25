@@ -8,35 +8,48 @@ export default {
   theme: {
     extend: {
       colors: {
-        // --- General & To-Do Theme ---
-        'theme-light-purple': '#EDE7F6', // Main page background for ToDo & Initial Choice
-        'theme-purple': '#BA68C8',       // To-Do accents
-        'theme-dark-purple': '#7B1FA2',  // Adjusted for better contrast for To-Do text
-        'theme-med-purple': '#AB47BC',
-        'theme-done-bg': '#E1BEE7',      
-        'theme-todo-border': '#B3E5FC', 
+        // --- Initial Screen Dark Theme (NEW) ---
+        'initial-bg-dark': '#2E294E', // Dark Purple-Blue, adjust to match image_9288ce.png
+        'initial-text-light': '#F0EAFE', // Very light lavender/off-white for text on dark bg
+        'initial-text-dim': '#BCA8E8',   // Dimmer light purple for subtitles on dark bg
+
+        // --- Choice Cards on Dark BG (Can remain white or be slightly adjusted) ---
+        'choice-card-bg': '#FFFFFF',
+        'choice-card-shadow-color': 'rgba(0, 0, 0, 0.3)', // Darker shadow for contrast
+
+        // --- Water Tracker on Dark BG ---
+        'water-tracker-bg': 'rgba(255, 255, 255, 0.08)', // Semi-transparent light card for water tracker
+        'water-empty-glass': 'rgba(203, 168, 232, 0.3)',    // Light, dim outline/fill for empty
+        'water-full-glass': '#A78BFA',     // Brighter purple for full glass (can reuse theme-purple)
+        'water-text': '#F0EAFE',         // Light text for water tracker
+
+        // --- Existing Theme Colors (Tweaked for overall harmony) ---
+        'theme-light-purple': '#EDE7F6',   // ToDo Page BG
+        'theme-purple': '#A78BFA',         // Main Purple Accent (Used for Water Full Glass too)
+        'theme-dark-purple': '#581C87',    // Darker Purple for ToDo Text/Headers
+        'theme-med-purple': '#7E22CE',     // Medium Purple
+        'theme-done-bg': '#E1BEE7',        // ToDo done card BG
+        'theme-todo-border': '#D8B4FE',   // Softer ToDo Checkbox Border
         
-        // --- Meal Tracker Theme (derived from image_cb00ba.png) ---
-        'meal-page-bg': '#FFF0F5',         // Page BG (Lavender Blush like original HTML)
-        'meal-header-text': '#D81B60',     // Strong pink for "My Daily Meals" title
-        'meal-time-text': '#E91E63',       // Vibrant pink for time text & event item text
-        'meal-name-text': '#374151',       // Dark Gray (Tailwind gray-700) for meal names
-        'meal-note-text': '#6B7280',       // Medium Gray (Tailwind gray-500) for notes
-        
-        'meal-card-default-bg': '#FFFFFF', // Default meal card is white
-        'meal-card-eaten-bg': '#E0F7FA',   // Light Cyan/Aqua for eaten cards (like Tailwind cyan-50)
-        'meal-event-card-bg': '#FEF6E6',  // Very light peachy-pink for event cards like "Wake Up"
-        
-        'meal-checkbox-border': '#E91E63',   // Vibrant pink for checkbox border
-        'meal-checkbox-checked-bg': '#4CAF50',// Clear green for checked state
+        'meal-page-bg': '#FFF0F5',          // Meal Tracker Page BG
+        'meal-header-text': '#D81B60',      // Strong pink for Meal Headers
+        'meal-time-text': '#E91E63',        // Vibrant pink for meal time text
+        'meal-name-text': '#374151',        
+        'meal-note-text': '#6B7280',        
+        'meal-card-default-bg': '#FFFFFF', 
+        'meal-card-eaten-bg': '#E0F7FA',   
+        'meal-event-card-bg': '#FEF6E6',  
+        'meal-checkbox-border': '#E91E63',   
+        'meal-checkbox-checked-bg': '#4CAF50',
       },
       borderRadius: {
         '3xl': '1.5rem', 
       },
-      boxShadow: { // Using standard Tailwind shadows for now to ensure they apply
-        'custom-meal': '0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.03)', // Kept custom for closer match if picked up
-        'custom-event': '0 4px 8px -1px rgba(0,0,0,0.03), 0 2px 4px -1px rgba(0,0,0,0.03)',   // Slightly more visible event shadow
-        'custom-choice': '0 10px 15px -3px rgba(0,0,0,0.07), 0 4px 6px -2px rgba(0,0,0,0.04)',
+      boxShadow: {
+        'custom-dark-card': '0 8px 25px rgba(0, 0, 0, 0.25)', // For cards on dark BG
+        'custom-meal': '0 8px 15px rgba(0, 0, 0, 0.05)',
+        'custom-todo': '0 8px 15px rgba(100, 30, 150, 0.07)', // Adjusted todo shadow
+        'custom-event': '0 4px 8px -1px rgba(0,0,0,0.03), 0 2px 4px -1px rgba(0,0,0,0.03)',
       },
       fontSize: {
         '2xl-plus': '1.6rem', 
