@@ -10,6 +10,7 @@ const todoDataDefinition = [ /* ... (same as before) ... */
     { id: "todo-bangun-3", text: "Cuci muka/wudhu", type: "task", icon: "🧼" },
     { id: "todo-bangun-4", text: "Solat subuh", type: "task", icon: "🙏" },
     { id: "todo-bangun-5", text: "Almatsurat", type: "task", icon: "📖" },
+    { id: "todo-bangun-6", text: "Pipis", type: "task", icon: "🚽" },
     { type: "header", title: "Siap siap sekolah", icon: "🎒" },
     { id: "todo-sekolah-1", text: "Mandi", type: "task", icon: "🚿" },
     { id: "todo-sekolah-2", text: "Sarapan", type: "task", icon: "🥞" },
